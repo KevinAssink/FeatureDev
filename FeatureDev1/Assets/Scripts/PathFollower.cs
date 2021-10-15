@@ -1,43 +1,54 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class PathFollower : MonoBehaviour
 {
-    [SerializeField] private Waypoint[] _waypoints;
     [SerializeField] private float _speed;
-    [SerializeField] private float _arrivaltreshold = 0.1f;
-    public UnityEvent OnPathComplete;
+    [SerializeField] private float _arrivalThreshold;
 
-    private int _currentWaypointIndex;
+    private Path _path;
+    private Waypoint _currentWaypoint;
 
-    private void Start()
+    private void Awake()
     {
-        _currentWaypointIndex = 0;
+        SetupPath();
     }
 
     private void Update()
     {
-        Vector3 heightOffsetPosition = new Vector3(_waypoints[_currentWaypointIndex].Position.x, transform.position.y, _waypoints[_currentWaypointIndex].Position.z);
-        float distance = Vector3.Distance(transform.position, heightOffsetPosition);
+        Vector3 heightCorrectedWaypointPosition = _currentWaypoint.GetHeightCorrectedPosition(transform.position.y);
+        float distanceToWaypoint = Vector3.Distance(transform.position, heightCorrectedWaypointPosition);
 
-        if (distance <= _arrivaltreshold)
+        if (distanceToWaypoint <= _arrivalThreshold)
         {
-            if (_currentWaypointIndex == _waypoints.Length - 1)
+            if (_currentWaypoint == _path.GetPathEnd())
             {
-                print("Ik ben bij het eindpunt");
-                OnPathComplete?.Invoke();
+                PathComplete();
             }
             else
             {
-                _currentWaypointIndex++;
+                _currentWaypoint = _path.GetNextWaypoint(_currentWaypoint);
+                transform.LookAt(_currentWaypoint.GetHeightCorrectedPosition(transform.position.y));
             }
         }
-        else
-        {
-            transform.LookAt(heightOffsetPosition);
-            transform.Translate(Vector3.forward * _speed * Time.deltaTime);
-        }
+        transform.Translate(Vector3.forward * _speed * Time.deltaTime);
     }
+    private void SetupPath()
+    {
+        _path = FindObjectOfType<Path>();
+        _currentWaypoint = _path.GetPathStart();
+        transform.LookAt(_currentWaypoint.GetHeightCorrectedPosition(transform.position.y));
+    }
+    private void PathComplete()
+	{
+        print("eindpunt!");
+        _speed = 0;
+    
+
+        FindObjectOfType<PlayerHealthComponent>().TakeDamage(1);
+        Destroy(gameObject);
+	}
+
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class Path : MonoBehaviour
 {
-    private Waypoint[] _waypoints;
+    [SerializeField] private Waypoint[] _waypoints;
 
     private void Awake()
     {
